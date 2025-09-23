@@ -1,20 +1,42 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+
+import { Injectable, OnModuleInit, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AuthDbDao } from './auth.db.dao';
+
+export interface ILoginResponse {
+    userId: string;
+    accessToken: string;
+}
+
+export interface IUserWithPassword {
+    userId: string;
+    username: string;
+    password: string;
+}
 
 @Injectable()
-export class AuthService {
-    constructor(private jwtService: JwtService) {}
+export class AuthService implements OnModuleInit {
 
-    private readonly users = [{ username: "learn", password: "poipoi" }];
+    constructor(private authDbDao: AuthDbDao, private jwtService: JwtService) {}
 
-    async login(username: string) {
-        // Normalement tu vérifieras l’utilisateur en DB
-        const user = this.users.find(u => u.username === username);
+    public async onModuleInit(): Promise<void> {
+        await this.authDbDao.connect();
+    }
+
+    async login(username: string, password: string): Promise<ILoginResponse> {
+        const user = await this.authDbDao.findUserByUsername(username);
+
         if (!user) {
             throw new UnauthorizedException();
         } else {
-            const payload = { username };
-            return { access_token: this.jwtService.sign(payload) };
+            const isPasswordValid = await bcrypt.compare(password, user.password);
+
+            if (isPasswordValid) {
+                return { userId: user.userId, accessToken: this.jwtService.sign({ userId: user.userId }) };
+            } else {
+                throw new UnauthorizedException();
+            }
         }
     }
 }
