@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { AuthDbDao } from './auth.db.dao';
+import { MongoModule } from 'src/mongo/mongo.module';
 
 @Module({
     imports: [
@@ -13,9 +14,11 @@ import { AuthDbDao } from './auth.db.dao';
             secret: 'super-secret-secret',
             signOptions: { expiresIn: '60s' },
         }),
+        MongoModule
     ],
+    controllers: [AuthController],
     providers: [AuthService, AuthDbDao, JwtStrategy],
-    controllers: [AuthController]
+    exports: [AuthService]
 })
 
 export class AuthModule {}

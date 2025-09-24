@@ -1,5 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { AuthService } from './auth.service';
+import { AuthService, ILoginResponse } from './auth.service';
 
 export interface ILoginBody {
     username: string;
@@ -12,7 +12,7 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
     
     @Post('login')
-    async login(@Body() body: ILoginBody) {
+    async login(@Body() body: ILoginBody): Promise<ILoginResponse> {
         return this.authService.login(body.username, body.password);
     }
     
