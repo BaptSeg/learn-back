@@ -10,7 +10,7 @@ export interface ICatalogProgressLight {
     nbMasteredElement: number;
 }
 
-export interface IProgressResult {
+export interface IProgressInfo {
     nbElementMastered: number;
     nextIndexToRevise?: number;
     nextIndexToDraw?: number;
@@ -27,25 +27,34 @@ export class ProgressService implements OnModuleInit {
         await this.progressDbDao.connect();
     }
 
-    public async progress(catalogId: string, userId: string, index: number, success: boolean, drawn: boolean): Promise<IProgressResult> {
+    public async progress(catalogId: string, userId: string, index: number, success: boolean, drawn: boolean): Promise<void> {
         if (drawn) {
             await this.progressDbDao.addProgress(catalogId, userId, index, success);
         } else {
             await this.progressDbDao.updateProgress(catalogId, userId, index, success);
         }
+    }
 
-        const catalogProgression = await this.progressDbDao.getCatalogProgressLight(catalogId, userId);
+    public async getProgressInfo(catalogId: string, userId: string): Promise<IProgressInfo> {
+        const catalogProgression = await this.progressDbDao.findCatalogProgressLight(catalogId, userId);
 
-        if (catalogProgression.nbInProgressElement === MAX_NB_ELEMENT_IN_PROGRESS) {
+        if (!catalogProgression) {
             return {
-                nbElementMastered: catalogProgression.nbMasteredElement,
-                nextIndexToRevise: catalogProgression.nextIndexToRevise,
-            }            
+                nbElementMastered: 0,
+                nextIndexToDraw: 0
+            }
         } else {
-            return {
-                nbElementMastered: catalogProgression.nbMasteredElement,
-                nextIndexToDraw: catalogProgression.nextIndexToDraw
-            }  
+            if (catalogProgression.nbInProgressElement === MAX_NB_ELEMENT_IN_PROGRESS) {
+                return {
+                    nbElementMastered: catalogProgression.nbMasteredElement,
+                    nextIndexToRevise: catalogProgression.nextIndexToRevise,
+                }            
+            } else {
+                return {
+                    nbElementMastered: catalogProgression.nbMasteredElement,
+                    nextIndexToDraw: catalogProgression.nextIndexToDraw
+                }  
+            }
         }
     }
 }

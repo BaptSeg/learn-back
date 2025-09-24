@@ -29,7 +29,7 @@ export class ProgressDbDao {
         this.collection = await this.mongoProvider.getCollection<ICatalogProgressDbSchema>("progress");
     }
 
-    public async getCatalogProgressLight(catalogId: string, userId: string): Promise<ICatalogProgressLight> {
+    public async findCatalogProgressLight(catalogId: string, userId: string): Promise<ICatalogProgressLight | undefined> {
         const result = await this.collection.aggregate<ICatalogProgressLight>([
             { $match: { catalogId, userId } },
             {
@@ -54,11 +54,7 @@ export class ProgressDbDao {
             }
         ]).toArray();
 
-        if (!result.length) {
-            throw new Error(`Catalog progression not found for catalogId ${catalogId} and userId ${userId}`);
-        }
-
-        return result[0];
+        return result.length ? result[0] : undefined;
     }
 
     public async addProgress(catalogId: string, userId: string, index: number, success: boolean): Promise<void> {
